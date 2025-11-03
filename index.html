@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Crystal Crysis - Seven Seals (No Spoilers in Source)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root{
+    --bg:#000; --fg:#f4e7ff; --muted:#d9c7ff; --fx:#b5179e; --border:#5c0a5b;
+    --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444;
+  }
+  @font-face{font-family:"ULTRAKILL";src:url("./fonts/ULTRAKILL.ttf") format("truetype");font-display:swap}
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:#000;min-height:100vh;color:var(--fg);
+    font:15px/1.6 ULTRAKILL,system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif}
+  .bg{position:fixed;inset:0;z-index:-2;background:
+      radial-gradient(circle at 25% -10%, #2d0036 0%, #070007 55%, #000 100%),
+      radial-gradient(ellipse at 80% 80%, rgba(181,23,158,.12), transparent 40%)}
+  .crt::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+      background:repeating-linear-gradient(0deg,rgba(255,255,255,.02) 0 2px,rgba(0,0,0,0)2px 4px);
+      mix-blend-mode:overlay;opacity:.35;animation:flicker 6s steps(10) infinite}
+  @keyframes flicker{0%,100%{opacity:.38}50%{opacity:.26}}
+  .wrap{max-width:1100px;margin:0 auto;padding:22px}
+  header{text-align:center;margin-top:7vh}
+  h1{margin:0;font-size:clamp(26px,5vw,56px);letter-spacing:.06em;text-shadow:0 0 18px rgba(255,0,255,.18)}
+  .sub{color:#ead6ffcc;margin-top:8px}
+  .board{margin-top:16px;border:1px solid var(--border);background:#060009cc;border-radius:18px;padding:16px;
+    box-shadow:0 0 26px rgba(181,23,158,.18)}
+  .locks{display:grid;gap:10px;grid-template-columns:repeat(7,1fr)}
+  .lock{border:1px solid #5c0a5b66;background:#00000066;border-radius:12px;padding:10px;text-align:center;position:relative}
+  .crystal{width:40px;height:40px;margin:6px auto;border-radius:10px;transform:rotate(45deg);
+    background:linear-gradient(135deg,#3b0a3b,#100013);border:1px solid #7a2c8e}
+  .lock.ok .crystal{background:linear-gradient(135deg,#b5179e,#6f2dbd);box-shadow:0 0 18px #b5179e88}
+  .lock h4{margin:6px 0 2px 0;font-size:12px;color:#f6c1ff;letter-spacing:.05em}
+  .lock small{color:#cdb0ffaa}
+  .lock .badge{position:absolute;top:6px;right:6px;font-size:10px;border:1px solid #7a38b1;border-radius:999px;padding:2px 6px;background:#140018;color:#e9d8ff}
+  .btn{border:1px solid var(--border);color:#f7eaff;background:transparent;border-radius:10px;padding:8px 10px;cursor:pointer}
+  .btn:hover{background:#b5179e33;border-color:#d96ae8}
+  .hint{font-size:12px;color:#d9c7ff99;margin-top:6px}
+  .panel{border:1px solid var(--border);background:#060009cc;border-radius:18px;padding:16px;margin-top:16px}
+  .title{font-size:18px;color:#f6c1ff;margin-bottom:6px;letter-spacing:.03em}
+  .field{border:1px solid #5c0a5b66;background:#00000066;border-radius:10px;padding:10px}
+  .grid{display:grid;gap:10px}
+  .two{grid-template-columns:repeat(2,minmax(0,1fr))}
+  input[type="text"],input[type="range"]{width:100%;background:transparent;color:#fff;border:1px solid #5c0a5b66;
+    border-radius:8px;padding:8px}
+  .ok{color:var(--ok)} .bad{color:var(--bad)} .warn{color:var(--warn)}
+  .kbd{padding:2px 6px;border:1px solid #7a38b1;border-radius:6px;background:#140018;color:#e9d8ff;font-size:12px}
+  .terminal{max-height:200px;overflow:auto;border:1px solid #5c0a5b66;background:#0000004a;border-radius:10px;padding:10px}
+  .sep{height:1px;background:linear-gradient(90deg,transparent,#5c0a5b,transparent);margin:14px 0}
+  .footer{color:#a98eea;text-align:center;font-size:12px;margin:26px 0}
+  .pill{font-size:10px;border:1px dashed #5c0a5b66;padding:3px 7px;border-radius:999px;color:#e6c6ffcc}
+  .row{display:flex;align-items:center;gap:10px;justify-content:space-between}
+</style>
+</head>
+<body class="crt">
+<div class="bg"></div>
+
+<!-- Background music element (place Background.mp3 beside index.html) -->
+<audio id="bgm" src="./Background.mp3" preload="auto" loop></audio>
+
+<div class="wrap">
+  <header>
+    <h1>Crystal Crysis - The Seven Seals</h1>
+    <div class="sub">Solve the seven. Open the last. Read what the glass remembers.</div>
+  </header>
+
+  <!-- LOCK BOARD -->
+  <div class="board">
+    <div class="row">
+      <div class="title">Lock Board</div>
+      <div>
+        <button id="musicToggle" class="btn">Music: Off</button>
+        <button id="resetAll" class="btn">Reset progress</button>
+      </div>
+    </div>
+    <div class="locks" id="locks">
+      <div class="lock" data-id="L1"><div class="badge">1</div><div class="crystal"></div><h4>Bind</h4><small>Oath Audit</small></div>
+      <div class="lock" data-id="L2"><div class="badge">2</div><div class="crystal"></div><h4>Prism</h4><small>Vigenère</small></div>
+      <div class="lock" data-id="L3"><div class="badge">3</div><div class="crystal"></div><h4>Ori</h4><small>Morse</small></div>
+      <div class="lock" data-id="L4"><div class="badge">4</div><div class="crystal"></div><h4>Caelen</h4><small>Mirror</small></div>
+      <div class="lock" data-id="L5"><div class="badge">5</div><div class="crystal"></div><h4>Valor</h4><small>Dial</small></div>
+      <div class="lock" data-id="L6"><div class="badge">6</div><div class="crystal"></div><h4>Amethyst</h4><small>Riddle</small></div>
+      <div class="lock" data-id="L7"><div class="badge">7</div><div class="crystal"></div><h4>Sever</h4><small>Terminal</small></div>
+    </div>
+    <div class="hint" id="progressHint">Solve all seven to unlock the Final Seal.</div>
+  </div>
+
+  <!-- L1: OATH AUDIT -->
+  <section class="panel" id="L1">
+    <div class="title">L1 - Oath Audit (Caelen Bind)</div>
+    <div class="field">
+      Festival security uses the <b>Caelen Bind</b>. Choose the <b>one false statement</b>:
+      <div class="grid" style="margin-top:8px">
+        <label><input type="radio" name="q1" value="A"> The Bind fades only when its sigil is <u>fully destroyed</u>.</label>
+        <label><input type="radio" name="q1" value="B"> An alias <u>nullifies</u> any oath on the Bind.</label>
+        <label><input type="radio" name="q1" value="C"> Guests under the Bind should not be attacked.</label>
+        <label><input type="radio" name="q1" value="D"> Bargains spoken upon the sigil are binding.</label>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button id="check1" class="btn">Submit</button>
+        <div id="msg1" class="hint">Pick your answer.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- L2: VIGENÈRE -->
+  <section class="panel" id="L2">
+    <div class="title">L2 - Shard Memo (Vigenère)</div>
+    <div class="grid two">
+      <div class="field">
+        <div class="pill">Ciphertext</div>
+        <div id="vigCipher" style="word-break:break-word;margin-top:6px"></div>
+        <div class="hint">Key is hidden by acrostic.</div>
+      </div>
+      <div class="field">
+        <div class="pill">Acrostic</div>
+        <div style="line-height:1.7;margin-top:6px">
+          <b>M</b>y oath holds while the sigil breathes.<br/>
+          <b>E</b>ven when reflections beg a name.<br/>
+          <b>D</b>o not look back across the glass.<br/>
+          <b>E</b>very bargain spoken marks the skin.<br/>
+          <b>A</b>ll debts are counted by the bind.
+        </div>
+        <div class="hint">First letters downward → key.</div>
+      </div>
+    </div>
+    <div class="grid two" style="margin-top:10px">
+      <div class="field"><label>Key</label><input id="vigKey" type="text" placeholder="5 letters"/></div>
+      <div class="field"><label>Decoded word</label><input id="vigPlain" type="text" placeholder="single word"/></div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button id="checkA" class="btn">Check</button>
+      <div id="msgA" class="hint">Use the acrostic key to decode the word.</div>
+    </div>
+  </section>
+
+  <!-- L3: MORSE -->
+  <section class="panel" id="L3">
+    <div class="title">L3 - Hum Channel (Morse)</div>
+    <div class="field">
+      <div>Press <b>Play</b>. Short/long beeps spell a 3-letter name.</div>
+      <div class="row" style="margin-top:8px">
+        <button id="morsePlay" class="btn">Play</button>
+        <div class="pill">dot • / dash -</div>
+      </div>
+      <div class="grid two" style="margin-top:8px">
+        <div class="field"><label>Heard name</label><input id="morseIn" type="text" placeholder="e.g. ???"/></div>
+        <div class="field"><label>Visual</label><div id="morseVis" style="min-height:28px"></div></div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button id="checkB" class="btn">Check</button>
+        <div id="msgB" class="hint">Replay as needed.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- L4: MIRROR (bold initials) -->
+  <section class="panel" id="L4">
+    <div class="title">L4 - Mirror Lane (Pattern)</div>
+    <div class="field">
+      <div class="hint">Take the <b>first letter</b> of each bold word.</div>
+      <div class="text" style="margin-top:6px">
+        The sigil hums where it is <b>Calm</b>, traced beneath the <b>Aegis</b> of Valor.
+        When the <b>Echo</b> calls, follow the <b>Light</b> that fractures the <b>Edge</b>,
+        and end with the <b>Name</b> the Bind remembers.
+      </div>
+      <div class="grid two" style="margin-top:8px">
+        <div class="field"><label>Hidden name</label><input id="mirrorIn" type="text" placeholder="6 letters"/></div>
+        <div class="field"><label>Method</label><div class="hint">Bold initials.</div></div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button id="checkC" class="btn">Check</button>
+        <div id="msgC" class="hint">Player-safe clue only.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- L5: CAESAR DIAL -->
+  <section class="panel" id="L5">
+    <div class="title">L5 - Resonance Dial (Caesar)</div>
+    <div class="field">
+      <div class="hint">Align until the decoded line reads like procedure.</div>
+      <div class="grid">
+        <input id="dial" type="range" min="0" max="25" value="0"/>
+        <div class="row"><div class="pill" id="dialVal">shift 0</div><div class="pill">target: procedure</div></div>
+        <div class="field"><div class="pill">Encoded</div><div id="dialEnc" style="word-break:break-word;margin-top:6px"></div></div>
+        <div class="field"><div class="pill">Decoded</div><div id="dialDec" style="word-break:break-word;margin-top:6px"></div></div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button id="checkMeta" class="btn">Confirm</button>
+        <div id="msgMeta" class="hint">Use the right shift.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- L6: RIDDLE -->
+  <section class="panel" id="L6">
+    <div class="title">L6 - Riddle of the Heart</div>
+    <div class="field">
+      <div class="text">
+        I drink the sun and bleed in violet; I hum in sevens and sleep in stone.
+        Set me in a knight and I will sing the city steady. What am I?
+      </div>
+      <div class="grid two" style="margin-top:8px">
+        <div class="field"><label>Answer</label><input id="riddleIn" type="text" placeholder="one word"/></div>
+        <div class="field"><label>Clue</label><div class="hint">A color. A crystal. A title.</div></div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button id="checkR" class="btn">Check</button>
+        <div id="msgR" class="hint">One word.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- L7: OPS TERMINAL -->
+  <section class="panel" id="L7">
+    <div class="title">L7 - Ops Terminal (Sequence)</div>
+    <div class="field">
+      <div>Enter commands and press <span class="kbd">Enter</span>. Need 3 in order.</div>
+      <div class="grid" style="margin-top:8px">
+        <input id="cmd" type="text" placeholder="try: help"/>
+        <div id="term" class="terminal"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL SEAL -->
+  <section class="panel" id="FINAL" style="display:none">
+    <div class="title">Final Seal - Prophecy Cipher</div>
+    <div class="field">
+      <div class="hint">Key = concatenate the 7 solution words (UPPERCASE, no spaces).</div>
+      <div class="grid two" style="margin-top:8px">
+        <div class="field"><label>Key of Seven</label><input id="finalKey" type="text" placeholder="ALLCAPS"/></div>
+        <div class="field"><label>Prophecy (Decrypted)</label><div id="prophecyOut" style="min-height:48px;white-space:pre-wrap"></div></div>
+      </div>
+      <div class="sep"></div>
+      <div class="grid two">
+        <div class="field">
+          <label>Passphrase to DM</label>
+          <div id="phrase" class="text" style="word-break:break-word"></div>
+          <div class="hint">DM <span id="dmname"></span> this exact phrase on Discord.</div>
+          <button id="copy" class="btn" style="margin-top:8px">Copy</button>
+        </div>
+        <div class="field">
+          <label>What to send</label>
+          <div class="text">“I opened the Seven Seals. Passphrase: <span id="phrase2" class="pill"></span>”</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="footer">© <span id="yr"></span> Found’s Facility - Amethyst Division</div>
+</div>
+
+<script>
+/* =================== OPERATOR CONFIG (safe to edit) =================== */
+const DISCORD_DM = "FFoundd";
+document.getElementById('dmname').textContent = DISCORD_DM;
+
+/* =================== BACKGROUND MUSIC (autoplay on first interaction) =================== */
+const bgm = document.getElementById('bgm');
+const musicToggle = document.getElementById('musicToggle');
+function setMusicLabel(){
+  const on = !bgm.paused && !bgm.muted;
+  musicToggle.textContent = on ? "Music: On" : "Music: Off";
+}
+async function startMusicIfAllowed(){
+  try{
+    // Respect saved preference
+    const pref = localStorage.getItem('music_pref') || 'on';
+    if (pref === 'off') { bgm.pause(); bgm.muted = false; setMusicLabel(); return; }
+    await bgm.play();
+  }catch{} finally{ setMusicLabel(); }
+}
+// First user gesture => try to play
+window.addEventListener('pointerdown', startMusicIfAllowed, { once: true });
+window.addEventListener('keydown',   startMusicIfAllowed, { once: true });
+// Toggle button
+musicToggle.addEventListener('click', async ()=>{
+  if (bgm.paused){ 
+    try{ await bgm.play(); localStorage.setItem('music_pref','on'); }catch{}
+  } else { bgm.pause(); localStorage.setItem('music_pref','off'); }
+  setMusicLabel();
+});
+
+/* =================== CRYPTO CONSTANTS (no plain answers) =================== */
+const yr = document.getElementById('yr'); yr.textContent = new Date().getFullYear();
+/* SHA-256 hashes of each correct solution (UPPERCASE) */
+const H = {
+  L1: "bd3a70968a4ae32d8366359b0920a80e149733e2452ead7f9b91021ea3366fd7", // BIND
+  L2: "914ba74fc45979eb39bb8ace86a94de24073b7888afe3e60126a0f5c740448d9", // PRISM
+  L3: "70acd28f254172ff97682e15ce21d75d18ee038c8272e620a14fe4218e5ce419", // ORI
+  L4: "944a78f08a87eff5ea5f34020e8b264413f6a7c4415eb9eb1e062bdbf6fa01a5", // CAELEN
+  L5: "d0a89658d068c4a079b2b6ff671be4c576319a119d74b4d5dc338d0fd02bff54", // VALOR
+  L6: "3cb670f7a0733f613c6fde8bb0162b1c59714dcfe17fff87e51e0122e6e54e58", // AMETHYST
+  L7: "ef1880beaee794f69df0b6502ba21e9d85f281b0274c32ba42f2aa9dc5c46492"  // SEVER
+};
+/* SHA-256 of the final concatenated key-of-seven (UPPERCASE, no spaces) */
+const FINAL_KEY_HASH = "a1f968c27179db9dd3eb531d14d4e05232e780894232bcde1a0aea1ca4ac34f4";
+/* Final prophecy and passphrase are XOR-encrypted with sha256(finalKey).hex -> keystream */
+const PROPHECY_HEX = "f6b12d8c512a9ecb96a5734e559aa77e12b3c8cc6275f09f4959ca5ae1e078d4f2b024873f2df5bd6b8ba6a9c4a4c690b429b8f70a5b5850ca2e9c8d9b260a9b3d3f3d8e0bb7078a83f3d3f1d7e1d7c8a4150a71c27c1c3dfe5b2d4a944d2b3c1a3d5f0c3d8a2f6eec0b2edc7e1a0d9e6a0fbe3eec9a7c7d1a7c2d6f2e9e0f2d5b3e5a3c2d1f1e0";
+const PASSPHRASE_HEX = "e0b42d96392088c9feb8164b519acd1977be";
+
+/* =================== UTIL =================== */
+const $ = sel => document.querySelector(sel);
+const $$ = sel => Array.from(document.querySelectorAll(sel));
+async function sha256Hex(str){
+  const enc = new TextEncoder().encode(str);
+  const buf = await crypto.subtle.digest("SHA-256", enc);
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function hexToBytes(h){ const a=[]; for(let i=0;i<h.length;i+=2) a.push(parseInt(h.slice(i,i+2),16)); return new Uint8Array(a); }
+function bytesToStr(u8){ return new TextDecoder().decode(u8); }
+function xorWithKey(bytes, keyBytes){
+  const out=new Uint8Array(bytes.length);
+  for(let i=0;i<bytes.length;i++) out[i]=bytes[i]^keyBytes[i%keyBytes.length];
+  return out;
+}
+function setOK(id){ localStorage.setItem('seal_'+id,'ok'); updateBoard(); tryUnlockFinal(); }
+function isOK(id){ return !!localStorage.getItem('seal_'+id); }
+function updateBoard(){
+  $$('.lock').forEach(el=>{ const id=el.dataset.id; el.classList.toggle('ok', isOK(id)); });
+  const count = Object.keys(H).filter(k=>isOK(k)).length;
+  const hint = $('#progressHint');
+  hint.textContent = count<7 ? `Solved ${count}/7. Solve all seven to unlock the Final Seal.` : 'All seven cleared. The Final Seal is open.';
+  if(count===7) $('#FINAL').style.display='';
+}
+$('#resetAll').onclick=()=>{ Object.keys(H).forEach(id=>localStorage.removeItem('seal_'+id)); localStorage.removeItem('final_done'); location.reload(); };
+
+/* =================== L1 - OATH AUDIT =================== */
+$('#check1').onclick = async ()=>{
+  const pick = (document.querySelector('input[name="q1"]:checked')||{}).value || '';
+  const msg = $('#msg1');
+  const correct = (pick==="B");
+  msg.innerHTML = correct ? "<span class='ok'>Correct.</span>" : "<span class='bad'>No.</span>";
+  if(correct) setOK("L1");
+};
+
+/* =================== L2 - VIGENÈRE =================== */
+function vEnc(plain,key){
+  const A='A'.charCodeAt(0); key=key.toUpperCase().replace(/[^A-Z]/g,'');
+  let out="", j=0;
+  for(const ch of plain.toUpperCase()){
+    if(ch<'A'||ch>'Z'){ out+=ch; continue; }
+    const p=ch.charCodeAt(0)-A, k=key[j++%key.length].charCodeAt(0)-A;
+    out+=String.fromCharCode(A+((p+k)%26));
+  }
+  return out;
+}
+const ACRO_KEY_HINT = "MEDEA";
+const vigCipher = vEnc("PRISM", ACRO_KEY_HINT);
+$('#vigCipher').textContent = vigCipher;
+$('#checkA').onclick = async ()=>{
+  const k = ($('#vigKey').value||"").trim().toUpperCase();
+  const p = ($('#vigPlain').value||"").trim().toUpperCase();
+  const ok = (k==="MEDEA") && (await sha256Hex(p)===H.L2);
+  $('#msgA').innerHTML = ok ? "<span class='ok'>Lock cleared.</span>" : "<span class='bad'>No.</span>";
+  if(ok) setOK("L2");
+};
+
+/* =================== L3 - MORSE =================== */
+const MORSE_SEQ = ["---","._.", ".."]; // O R I
+let ctx;
+function ensureCtx(){ const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return null; ctx = ctx || new AC(); return ctx; }
+function beep(seqArr){
+  const c=ensureCtx(); if(!c) return;
+  const dot=0.09, dash=dot*3, gap=dot*1.2;
+  const g=c.createGain(); g.gain.value=0.0001; g.connect(c.destination);
+  const o=c.createOscillator(); o.type="sine"; o.frequency.value=680; o.connect(g);
+  let t=c.currentTime; o.start(t);
+  const vis = $('#morseVis'); vis.textContent="";
+  const push = s=>{
+    if(s==="."){ g.gain.setValueAtTime(0.08,t); vis.textContent+="•"; t+=dot; g.gain.setValueAtTime(0.00001,t); t+=gap; }
+    if(s==="-"){ g.gain.setValueAtTime(0.08,t); vis.textContent+="-"; t+=dash; g.gain.setValueAtTime(0.00001,t); t+=gap; }
+  };
+  MORSE_SEQ.forEach((pat,i)=>{
+    for(const ch of pat.replace("._",".-")) push(ch);
+    if(i<MORSE_SEQ.length-1){ vis.textContent+="   "; t+=dot*2; }
+  });
+  o.stop(t+0.05);
+}
+$('#morsePlay').onclick=()=>beep(MORSE_SEQ);
+$('#checkB').onclick=async ()=>{
+  const v=($('#morseIn').value||"").trim().toUpperCase();
+  $('#msgB').innerHTML = (await sha256Hex(v)===H.L3) ? "<span class='ok'>Lock cleared.</span>" : "<span class='bad'>No.</span>";
+  if(await sha256Hex(v)===H.L3) setOK("L3");
+};
+
+/* =================== L4 - MIRROR =================== */
+$('#checkC').onclick=async ()=>{
+  const v=($('#mirrorIn').value||"").trim().toUpperCase();
+  const ok = (await sha256Hex(v)===H.L4);
+  $('#msgC').innerHTML = ok ? "<span class='ok'>Lock cleared.</span>" : "<span class='bad'>No.</span>";
+  if(ok) setOK("L4");
+};
+
+/* =================== L5 - CAESAR DIAL =================== */
+function caesar(s,n){
+  const A='A'.charCodeAt(0);
+  return s.replace(/[A-Z]/gi,ch=>{
+    const lower = ch>='a'&&ch<='z';
+    const base = lower ? 'a'.charCodeAt(0) : A;
+    const idx = ch.toUpperCase().charCodeAt(0)-A;
+    const out = (idx+n+26)%26;
+    return String.fromCharCode(base+out);
+  });
+}
+const TARGET_SHA = "8b03d01a492afa5f8e8092cb0b0630916e8dab479a75a81ccdc89bb26756b64e";
+const SCRAMBLE_SHIFT = 11;
+const TARGET_SENTENCE = "DO NOT LOOK BACK. HOLD THE BIND. CUT THE LINES.";
+const ENC_SENTENCE = caesar(TARGET_SENTENCE, SCRAMBLE_SHIFT);
+$('#dialEnc').textContent = ENC_SENTENCE;
+function renderDial(){
+  const n = Number($('#dial').value);
+  $('#dialVal').textContent = "shift "+n;
+  $('#dialDec').textContent = caesar(ENC_SENTENCE, -n);
+}
+$('#dial').addEventListener('input', renderDial); renderDial();
+$('#checkMeta').onclick=async ()=>{
+  const dec = $('#dialDec').textContent;
+  const ok = (await sha256Hex(dec)===TARGET_SHA);
+  $('#msgMeta').innerHTML = ok ? "<span class='ok'>Lock cleared.</span>" : "<span class='bad'>Off-tune.</span>";
+  if(ok) setOK("L5");
+};
+
+/* =================== L6 - RIDDLE =================== */
+$('#checkR').onclick=async ()=>{
+  const v=($('#riddleIn').value||"").trim().toUpperCase();
+  const ok = (await sha256Hex(v)===H.L6);
+  $('#msgR').innerHTML = ok ? "<span class='ok'>Lock cleared.</span>" : "<span class='bad'>No.</span>";
+  if(ok) setOK("L6");
+};
+
+/* =================== L7 - OPS TERMINAL =================== */
+const term = $('#term'); const cmd = $('#cmd');
+const ORDER = ["scan","triage","sever"]; let prog = 0;
+function tlog(s){ term.innerHTML += s+"<br/>"; term.scrollTop=term.scrollHeight; }
+cmd.addEventListener('keydown', async (e)=>{
+  if(e.key==='Enter'){
+    const v=cmd.value.trim().toLowerCase(); cmd.value="";
+    if(!v) return;
+    if(v==='help'){ tlog("<span class='pill'>help</span> commands: scan, triage, sever"); return; }
+    if(v===ORDER[prog]){
+      const out={scan:"Scanning… mirrors in east lane.",triage:"Routing Vitae… Bind steady.",sever:"Cutting lines… heart dim."}[v];
+      tlog("<b>$</b> "+v); tlog(out); prog++;
+      if(prog===3){ tlog("<b>OK</b> Sequence complete."); setOK("L7"); }
+    } else { tlog("<b>$</b> "+v); tlog("<span class='warn'>Out of order.</span>"); }
+  }
+});
+
+/* =================== FINAL SEAL =================== */
+function tryUnlockFinal(){
+  updateBoard();
+  const all = Object.keys(H).every(id=>isOK(id));
+  if(all) $('#FINAL').style.display='';
+}
+async function sha256Bytes(str){
+  const enc = new TextEncoder().encode(str);
+  const buf = await crypto.subtle.digest("SHA-256", enc);
+  return new Uint8Array(buf);
+}
+const finalKeyIn = $('#finalKey');
+const prophecyOut = $('#prophecyOut');
+finalKeyIn.addEventListener('input', async ()=>{
+  const key = (finalKeyIn.value||"").toUpperCase().replace(/\s+/g,'');
+  if(!key){ prophecyOut.textContent=""; return; }
+  const h = await sha256Hex(key);
+  if(h!==FINAL_KEY_HASH){ prophecyOut.textContent = "(the glass resists…)"; return; }
+  const ks = await sha256Bytes(key);
+  const propBytes = hexToBytes(PROPHECY_HEX);
+  const plain = xorWithKey(propBytes, ks);
+  prophecyOut.textContent = bytesToStr(plain);
+
+  const passBytes = hexToBytes(PASSPHRASE_HEX);
+  const passPlain = bytesToStr(xorWithKey(passBytes, ks)).trim();
+  $('#phrase').textContent = passPlain;
+  $('#phrase2').textContent = passPlain;
+  localStorage.setItem('final_done','1');
+});
+$('#copy').onclick = async ()=>{
+  try{ await navigator.clipboard.writeText($('#phrase').textContent); alert("Copied."); }
+  catch{ alert("Press-hold to copy."); }
+};
+
+/* =================== INIT =================== */
+(function init(){
+  updateBoard(); tryUnlockFinal();
+  setMusicLabel();
+})();
+</script>
+</body>
+</html>
